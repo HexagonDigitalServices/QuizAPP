@@ -2,7 +2,7 @@
 
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-export default function LoginPage({ onLoginSuccess = null }) {
+export default function LoginPage() {
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
