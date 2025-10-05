@@ -1,5 +1,4 @@
 
-
 const API_BASE = "http://localhost:5000";
 
 const Sidebar = () => {
@@ -143,56 +142,6 @@ const Sidebar = () => {
     }, 120);
   };
 
-  const handleLevelSelect = (levelId) => {
-    setSelectedLevel(levelId);
-    setCurrentQuestion(0);
-    setUserAnswers({});
-    setShowResults(false);
-    submittedRef.current = false;
-
-    if (window.innerWidth < 768) setIsSidebarOpen(false);
-  };
-
-  const handleAnswerSelect = (answerIndex) => {
-    const newAnswers = { ...userAnswers, [currentQuestion]: answerIndex };
-    setUserAnswers(newAnswers);
-    setTimeout(() => {
-      if (currentQuestion < getQuestions().length - 1) {
-        setCurrentQuestion((prev) => prev + 1);
-      } else {
-        setShowResults(true);
-      }
-    }, 500);
-  };
-
-  const getQuestions = () => {
-    if (!selectedTech || !selectedLevel) return [];
-    return questionsData[selectedTech]?.[selectedLevel] || [];
-  };
-
-  const calculateScore = () => {
-    const questions = getQuestions();
-    let correct = 0;
-    questions.forEach((question, index) => {
-      if (userAnswers[index] === question.correctAnswer) {
-        correct++;
-      }
-    });
-    return {
-      correct,
-      total: questions.length,
-      percentage: questions.length
-        ? Math.round((correct / questions.length) * 100)
-        : 0,
-    };
-  };
-
-  const resetQuiz = () => {
-    setCurrentQuestion(0);
-    setUserAnswers({});
-    setShowResults(false);
-    submittedRef.current = false;
-  };
 
   const questions = getQuestions();
   const currentQ = questions[currentQuestion];
@@ -228,17 +177,8 @@ const Sidebar = () => {
 
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
 
-  const getAuthHeader = () => {
-    const token =
-      localStorage.getItem("token") ||
-      localStorage.getItem("authToken") ||
-      null;
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  };
 
   const submitResult = async () => {
-    if (submittedRef.current) return;
-    if (!selectedTech || !selectedLevel) return;
 
     const payload = {
       title: `${selectedTech.toUpperCase()} - ${
@@ -251,32 +191,6 @@ const Sidebar = () => {
       wrong: score.total - score.correct,
     };
 
-    try {
-      submittedRef.current = true;
-      toast.info("Saving your result...");
-      const res = await axios.post(`${API_BASE}/api/results`, payload, {
-        headers: {
-          "Content-Type": "application/json",
-          ...getAuthHeader(),
-        },
-        timeout: 10000,
-      });
-
-      if (res.data && res.data.success) {
-        toast.success("Result saved!");
-      } else {
-        toast.warn("Result not saved. Server responded unexpectedly.");
-        submittedRef.current = false;
-      }
-    } catch (err) {
-      submittedRef.current = false;
-      console.error(
-        "Error saving result:",
-        err?.response?.data || err.message || err
-      );
-      toast.error("Could not save result. Check console or network.");
-    }
-  };
 
   useEffect(() => {
     if (showResults) {
@@ -298,129 +212,9 @@ const Sidebar = () => {
 
       <div className={sidebarStyles.mainContainer}>
         {/* Sidebar */}
-        <aside
-          ref={asideRef}
-          className={`${sidebarStyles.sidebar} ${
-            isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
-          aria-hidden={!isSidebarOpen && window.innerWidth < 768}
-        >
-          <div className={sidebarStyles.sidebarHeader}>
-            <div className={sidebarStyles.headerDecoration1} />
-            <div className={sidebarStyles.headerDecoration2} />
 
-            <div className={sidebarStyles.headerContent}>
-              <div className={sidebarStyles.logoContainer}>
-                <div className={sidebarStyles.logoIcon}>
-                  <BookOpen size={28} className="text-indigo-700" />
-                </div>
-                <div>
-                  <h1 className={sidebarStyles.logoTitle}>Tech Quiz Master</h1>
-                  <p className={sidebarStyles.logoSubtitle}>
-                    Test your knowledge & improve skills
-                  </p>
-                </div>
-              </div>
 
-              <button
-                onClick={toggleSidebar}
-                className={sidebarStyles.closeButton}
-                aria-label="Close sidebar"
-              >
-                <X size={20} />
-              </button>
-            </div>
-          </div>
-
-          <div className={sidebarStyles.sidebarContent}>
-            <div className={sidebarStyles.technologiesHeader}>
-              <h2 className={sidebarStyles.technologiesTitle}>Technologies</h2>
-              <span className={sidebarStyles.technologiesCount}>
-                {technologies.length} options
-              </span>
-            </div>
-
-            {technologies.map((tech) => (
-              <div
-                key={tech.id}
-                className={sidebarStyles.techItem}
-                data-tech={tech.id}
-              >
-                <button
-                  onClick={() => handleTechSelect(tech.id)}
-                  className={`${sidebarStyles.techButton} ${
-                    selectedTech === tech.id
-                      ? `${tech.color} ${sidebarStyles.techButtonSelected}`
-                      : sidebarStyles.techButtonNormal
-                  }`}
-                >
-                  <div className={sidebarStyles.techButtonContent}>
-                    <span className={`${sidebarStyles.techIcon} ${tech.color}`}>
-                      {tech.icon}
-                    </span>
-                    <span className={sidebarStyles.techName}>{tech.name}</span>
-                  </div>
-                  {selectedTech === tech.id ? (
-                    <ChevronDown size={18} className="text-current" />
-                  ) : (
-                    <ChevronRight size={18} className="text-gray-400" />
-                  )}
-                </button>
-
-                {selectedTech === tech.id && (
-                  <div className={sidebarStyles.levelsContainer}>
-                    <h3 className={sidebarStyles.levelsTitle}>
-                      <span>Select Difficulty</span>
-                      <span className={sidebarStyles.techBadge}>
-                        {technologies.find((t) => t.id === selectedTech).name}
-                      </span>
-                    </h3>
-
-                    {levels.map((level) => (
-                      <button
-                        key={level.id}
-                        onClick={() => handleLevelSelect(level.id)}
-                        className={`${sidebarStyles.levelButton} ${
-                          selectedLevel === level.id
-                            ? `${level.color} ${sidebarStyles.levelButtonSelected}`
-                            : sidebarStyles.levelButtonNormal
-                        }`}
-                      >
-                        <div className={sidebarStyles.levelButtonContent}>
-                          <span
-                            className={`${sidebarStyles.levelIcon} ${
-                              selectedLevel === level.id
-                                ? "bg-white/40"
-                                : "bg-gray-100"
-                            }`}
-                          >
-                            {level.icon}
-                          </span>
-                          <span>{level.name}</span>
-                        </div>
-                        <span className={sidebarStyles.levelQuestions}>
-                          {level.questions} Qs
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-
-          <div className={sidebarStyles.sidebarFooter}>
-            <div className={sidebarStyles.footerContent}>
-              <div className={sidebarStyles.footerContentCenter}>
-                <p>Master your skills one quiz at a time</p>
-                <p className={sidebarStyles.footerHighlight}>
-                  Keep Learning, Keep Growing!
-                </p>
-              </div>
-            </div>
-          </div>
-        </aside>
-
+{/* QUESTION AND ANSWER ALSO RESULT */}
         <main className={sidebarStyles.mainContent}>
           <div className={sidebarStyles.mobileHeader}>
             <button

@@ -1,9 +1,3 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
-import axios from "axios";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { resultStyles } from "../../assets/dummyStyles";
-
 const Badge = ({ percent }) => {
   if (percent >= 85)
     return <span className={resultStyles.badgeExcellent}>Excellent</span>;
@@ -28,7 +22,7 @@ export default function MyResultPage({ apiBase = "http://localhost:5000" }) {
       null;
     return token ? { Authorization: `Bearer ${token}` } : {};
   }, []);
-
+// Effect: Fetch results when component mounts or when selectedTechnology changes
   useEffect(() => {
     let mounted = true;
     const fetchResults = async (tech = "all") => {
@@ -76,6 +70,9 @@ export default function MyResultPage({ apiBase = "http://localhost:5000" }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiBase, selectedTechnology, getAuthHeader]);
 
+
+// Effect: fetch all results once (or when apiBase changes) to build a list
+// of available `technologies` for filter buttons.
   useEffect(() => {
     let mounted = true;
     const fetchAllForTechList = async () => {
@@ -115,6 +112,8 @@ export default function MyResultPage({ apiBase = "http://localhost:5000" }) {
 
   const makeKey = (r) => (r && r._id ? r._id : `${r.id}||${r.title}`);
 
+  // `summary` is memoized so it only recalculates when `results` changes.
+// It aggregates totals and computes an overall percentage.
   const summary = useMemo(() => {
     const source = Array.isArray(results) ? results : [];
     const totalQs = source.reduce(
@@ -130,6 +129,7 @@ export default function MyResultPage({ apiBase = "http://localhost:5000" }) {
     return { totalQs, totalCorrect, totalWrong, pct };
   }, [results]);
 
+  // Group results by the first word of the title (used as "track")
   const grouped = useMemo(() => {
     const src = Array.isArray(results) ? results : [];
     const map = {};
@@ -141,41 +141,14 @@ export default function MyResultPage({ apiBase = "http://localhost:5000" }) {
     return map;
   }, [results]);
 
+  // Handler called when user clicks a technology filter button
   const handleSelectTech = (tech) => {
     setSelectedTechnology(tech || "all");
   };
 
-  return (
-    <div className={resultStyles.pageContainer}>
-      <div className={resultStyles.container}>
-        <header className={resultStyles.header}>
-          <div>
-            <h1 className={resultStyles.title}>Quiz Results</h1>
-          </div>
 
-          <div className={resultStyles.headerControls}>
-            {/* optional controls could be added here */}
-          </div>
-        </header>
-
-        {/* Technology filter buttons */}
-        <div className={resultStyles.filterContainer}>
-          <div className={resultStyles.filterContent}>
             <div className={resultStyles.filterButtons}>
               <span className={resultStyles.filterLabel}>Filter by tech:</span>
-
-              {/* All button */}
-              <button
-                onClick={() => handleSelectTech("all")}
-                className={`${resultStyles.filterButton} ${
-                  selectedTechnology === "all"
-                    ? resultStyles.filterButtonActive
-                    : resultStyles.filterButtonInactive
-                }`}
-                aria-pressed={selectedTechnology === "all"}
-              >
-                All
-              </button>
 
               {/* dynamic technology buttons */}
               {technologies.map((tech) => (
@@ -187,7 +160,6 @@ export default function MyResultPage({ apiBase = "http://localhost:5000" }) {
                       ? resultStyles.filterButtonActive
                       : resultStyles.filterButtonInactive
                   }`}
-                  aria-pressed={selectedTechnology === tech}
                 >
                   {tech}
                 </button>
@@ -215,45 +187,7 @@ export default function MyResultPage({ apiBase = "http://localhost:5000" }) {
                 ))}
             </div>
 
-            <div className={resultStyles.filterStatus}>
-              {selectedTechnology === "all"
-                ? "Showing all technologies"
-                : `Filtering: ${selectedTechnology}`}
-            </div>
-          </div>
-        </div>
 
-        {loading ? (
-          <div className={resultStyles.loadingContainer}>
-            <div className={resultStyles.loadingSpinner} />
-            <div className={resultStyles.loadingText}>Loading results...</div>
-          </div>
-        ) : (
-          <>
-            {Object.entries(grouped).map(([track, items]) => (
-              <section key={track} className={resultStyles.trackSection}>
-                <h2 className={resultStyles.trackTitle}>{track} Track</h2>
-
-                <div className={resultStyles.resultsGrid}>
-                  {items.map((r) => (
-                    <StripCard key={makeKey(r)} item={r} />
-                  ))}
-                </div>
-              </section>
-            ))}
-
-            {/* fallback when no results at all */}
-            {Array.isArray(results) && results.length === 0 && !error && (
-              <div className={resultStyles.emptyState}>
-                No results yet. Take a quiz to see results here.
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
 
 /* --------------------- StripCard component --------------------- */
 function StripCard({ item }) {
@@ -272,48 +206,4 @@ function StripCard({ item }) {
   };
 
   const level = getLevel(item);
-
-  return (
-    <article className={resultStyles.card}>
-      <div className={resultStyles.cardAccent}></div>
-
-      <div className={resultStyles.cardContent}>
-        <div className={resultStyles.cardHeader}>
-          <div className={resultStyles.cardInfo}>
-            {/* avatar shows level letter (B / I / A) */}
-            <div className={`${resultStyles.levelAvatar} ${level.style}`}>
-              {level.letter}
-            </div>
-            <div className={resultStyles.cardText}>
-              <h3 className={resultStyles.cardTitle}>{item.title}</h3>
-              <div className={resultStyles.cardMeta}>
-                {item.totalQuestions} Qs
-                {item.timeSpent ? ` • ${item.timeSpent}` : ""}
-              </div>
-            </div>
-          </div>
-
-          <div className={resultStyles.cardPerformance}>
-            <div className={resultStyles.performanceLabel}>Performance</div>
-            <div className={resultStyles.badgeContainer}>
-              <Badge percent={percent} />
-            </div>
-          </div>
-        </div>
-
-        <div className={resultStyles.cardStats}>
-          <div className={resultStyles.statItem}>
-            Correct:{" "}
-            <span className={resultStyles.statNumber}>{item.correct}</span>
-          </div>
-          <div className={resultStyles.statItem}>
-            Wrong: <span className={resultStyles.statNumber}>{item.wrong}</span>
-          </div>
-          <div className={resultStyles.statItem}>
-            Score: <span className={resultStyles.statNumber}>{percent}%</span>
-          </div>
-        </div>
-      </div>
-    </article>
-  );
 }
