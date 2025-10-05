@@ -142,6 +142,23 @@ const Sidebar = () => {
     }, 120);
   };
 
+    const calculateScore = () => {
+    const questions = getQuestions();
+    let correct = 0;
+    questions.forEach((question, index) => {
+      if (userAnswers[index] === question.correctAnswer) {
+        correct++;
+      }
+    });
+    return {
+      correct,
+      total: questions.length,
+      percentage: questions.length
+        ? Math.round((correct / questions.length) * 100)
+        : 0,
+    };
+  };
+
 
   const questions = getQuestions();
   const currentQ = questions[currentQuestion];
