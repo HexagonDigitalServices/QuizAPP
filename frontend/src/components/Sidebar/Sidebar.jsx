@@ -199,19 +199,7 @@ const Sidebar = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showResults]);
 
-  return (
-    <div className={sidebarStyles.pageContainer}>
-      {/* Mobile overlay when sidebar is open */}
-      {isSidebarOpen && (
-        <div
-          onClick={() => window.innerWidth < 768 && setIsSidebarOpen(false)}
-          className={sidebarStyles.mobileOverlay}
-          aria-hidden
-        />
-      )}
-
-      <div className={sidebarStyles.mainContainer}>
-        {/* Sidebar */}
+    
 
 
 {/* QUESTION AND ANSWER ALSO RESULT */}
