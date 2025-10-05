@@ -206,4 +206,10 @@ function StripCard({ item }) {
   };
 
   const level = getLevel(item);
+
+
+       {item.timeSpent ? ` • ${item.timeSpent}` : ""}
+  
 }
+
+
