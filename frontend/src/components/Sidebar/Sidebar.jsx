@@ -208,6 +208,14 @@ const Sidebar = () => {
       wrong: score.total - score.correct,
     };
 
+    catch (err) {
+      submittedRef.current = false;
+      console.error(
+        "Error saving result:",
+        err?.response?.data || err.message || err
+      );
+      toast.error("Could not save result. Check console or network.");
+    }
 
   useEffect(() => {
     if (showResults) {
